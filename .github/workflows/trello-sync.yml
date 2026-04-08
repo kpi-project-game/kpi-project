@@ -29,12 +29,13 @@ jobs:
           CARD_ID=$(echo $SEARCH_RES | jq -r '.cards[0].id')
 
           if [ "$CARD_ID" != "null" ]; then
-            echo "Moving card $CARD_ID to the Done list..."
+            echo "Moving card $CARD_ID to the Done list and marking complete..."
             curl -s -X PUT "https://api.trello.com/1/cards/$CARD_ID" \
               -d "idList=$DONE_LIST_ID" \
+              -d "dueComplete=true" \
               -d "key=$TRELLO_KEY" \
               -d "token=$TRELLO_TOKEN"
-            echo "Successfully moved!"
+            echo "Successfully moved and marked complete!"
           else
             echo "Warning: Could not find a Trello card matching ${{ env.TRELLO_ID }}"
           fi
