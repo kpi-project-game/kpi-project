@@ -12,9 +12,15 @@ jobs:
         id: extract
         run: |
           COMMIT_MSG="${{ github.event.head_commit.message }}"
-          TRELLO_ID=$(echo "$COMMIT_MSG" | grep -oP 'PRJ-[0-9]+' | head -n 1)
-          echo "Found ID: $TRELLO_ID"
-          echo "TRELLO_ID=$TRELLO_ID" >> $GITHUB_ENV
+
+          if echo "$COMMIT_MSG" | grep -iqP '^PRJ-[0-9]+[\s:-]+Done'; then
+            TRELLO_ID=$(echo "$COMMIT_MSG" | grep -oP '^PRJ-[0-9]+' | head -n 1)
+            echo "Completion detected! Found ID: $TRELLO_ID"
+            echo "TRELLO_ID=$TRELLO_ID" >> $GITHUB_ENV
+          else
+            echo "Commit does not indicate completion. Skipping Trello sync."
+            echo "TRELLO_ID=" >> $GITHUB_ENV
+          fi
 
       - name: Update Trello Board
         if: env.TRELLO_ID != ''
