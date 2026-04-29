@@ -14,6 +14,9 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Folder Include="Models\Enemies\ThirdLevel\" />
+      <Folder Include="Models\Enemies\SecondLevel\" />
+      <Folder Include="Models\Skills\" />
       <Folder Include="Telegram\Handlers\" />
     </ItemGroup>
 
