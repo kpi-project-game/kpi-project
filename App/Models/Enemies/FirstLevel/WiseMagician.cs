@@ -1,10 +1,11 @@
 using KPI_PROJECT.Models.BaseClasses;
 using KPI_PROJECT.Models.EnemySkills;
+using KPI_PROJECT.Models.EnemySkills.IBattleUnit;
 using KPI_PROJECT.Models.EnumStates;
 
-namespace KPI_PROJECT.Models.FirstLevelEnemys;
+namespace KPI_PROJECT.Models.Enemies.FirstLevel;
 
-public class WiseMagician : EnemyBase
+public class WiseMagician : EnemyBase, IBattleUnit
 {
     public WiseMagician()
     {
@@ -14,33 +15,13 @@ public class WiseMagician : EnemyBase
         Name = "Wise Magician";
         PhisDefense = 2;
         Speed = 5;
-    }
-    public List<ISkill> CurrentSkills { get; set; } = new List<ISkill>()
-    {
-        new CharmSkill(),
-        new FireballSkill(15),
-    };
-    public  void HandAttack( Player player)
-    {
-       
+        CurrentSkills.Add(new FireballSkill(10));
+        CurrentSkills.Add(new CharmSkill());
+        CurrentSkills.Add(new ThunderStrikeSkill(4));
     }
     
-    /// <summary>
-    /// Strong Charming. Lowers defense (-4), and lets other skills to hurt harder (x2,5)
-    /// </summary>
-    public  void UseSkill1(Player player)
+    public override void CastSkill(ISkill chosenSkill, IBattleUnit target)
     {
-        
-    }
-    
-    public  void UseSkill2(Player player)
-    {
-        
-        
-    }
-    
-    public  void Defend()
-    {
-        this.CurrentEffects.Add(new ActiveEffect(BattleState.Defensive, 3));
+        chosenSkill.Execute(this, target);
     }
 }

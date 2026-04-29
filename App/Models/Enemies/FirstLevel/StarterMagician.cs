@@ -19,9 +19,8 @@ public class StarterMagician : EnemyBase, IBattleUnit
         CurrentSkills.Add(new FireballSkill(10));
         CurrentSkills.Add(new CharmSkill());
     }
-
-
-    public void CastSkill(ISkill chosenSkill, IBattleUnit target)
+    
+    public override void CastSkill(ISkill chosenSkill, IBattleUnit target)
     {
         chosenSkill.Execute(this, target);
     }
