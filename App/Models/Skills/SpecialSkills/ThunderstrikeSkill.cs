@@ -22,6 +22,6 @@ public class ThunderStrikeSkill : ISkill
             TotalDmg *= Multiplier;
         }
 
-        target.HP = Math.Max(0, target.HP - TotalDmg);
+        target.Hp = Math.Max(0, target.Hp - TotalDmg);
     }
 }

@@ -33,7 +33,7 @@ public class FireballSkill : ISkill
             resDamage *= Multiplier;
         }
         
-        target.HP =  Math.Max(0, target.HP - resDamage);
+        target.Hp =  Math.Max(0, target.Hp - resDamage);
         
     }
 }

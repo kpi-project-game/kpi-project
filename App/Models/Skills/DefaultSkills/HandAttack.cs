@@ -17,6 +17,6 @@ public class HandAttack : ISkill
         }
         
         totalDmg = Math.Max(0, totalDmg);
-        target.HP -= totalDmg;
+        target.Hp -= totalDmg;
     }
 }
