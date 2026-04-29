@@ -9,12 +9,11 @@ public class WiseMagician : EnemyBase, IBattleUnit
 {
     public WiseMagician()
     {
-        HP = 35;
+        Hp = 35;
         MaxHp = 35;
         HandDmg = 6;
         Name = "Wise Magician";
         PhisDefense = 2;
-        Speed = 5;
         CurrentSkills.Add(new FireballSkill(10));
         CurrentSkills.Add(new CharmSkill());
         CurrentSkills.Add(new ThunderStrikeSkill(4));

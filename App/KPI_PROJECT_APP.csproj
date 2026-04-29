@@ -16,6 +16,9 @@
     <ItemGroup>
       <Folder Include="Models\Enemies\ThirdLevel\" />
       <Folder Include="Models\Enemies\SecondLevel\" />
+      <Folder Include="Models\Items\Epic\" />
+      <Folder Include="Models\Items\Legendary\" />
+      <Folder Include="Models\Items\Uncommon\" />
       <Folder Include="Models\Skills\" />
       <Folder Include="Telegram\Handlers\" />
     </ItemGroup>
