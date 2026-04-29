@@ -25,4 +25,5 @@ public abstract class EnemyBase : IBattleUnit
         CurrentSkills.Add(new Defend());
     }
 
+    public abstract void CastSkill(ISkill chosenSkill, IBattleUnit target);
 }

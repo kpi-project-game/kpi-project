@@ -2,13 +2,13 @@ using KPI_PROJECT.Models.EnumStates;
 
 namespace KPI_PROJECT.Models.EnemySkills;
 
-public class ThunderstrikeSkill : ISkill
+public class ThunderStrikeSkill : ISkill
 {
     public string Name => "Thunderstrike";
     public int TotalDmg { get; set; }
     public int Multiplier { get; set; }
     
-    public ThunderstrikeSkill(int totalDmg)
+    public ThunderStrikeSkill(int totalDmg)
     {
         TotalDmg = totalDmg;
         Multiplier = 2;
