@@ -12,7 +12,7 @@ public class BotManager
 {
     private readonly DatabaseManager _dbManager = new DatabaseManager();
     private string botToken { get; set; }
-    string tokenPath = "/home/igruk/KPI_PROJECT/kpi-project/App/Telegram/Token.txt";
+    string tokenPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Telegram", "Token.txt");
     private readonly ITelegramBotClient _botClient;
     
      public BotManager()

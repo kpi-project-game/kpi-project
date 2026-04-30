@@ -78,6 +78,7 @@ public class DatabaseManager
     
         command.CommandText = "SELECT * FROM Characters WHERE TelegramId = $tgId AND IsAlive = 1 LIMIT 1";
         command.Parameters.AddWithValue("$tgId", telegramId);
+        
 
         using var reader = command.ExecuteReader();
     
