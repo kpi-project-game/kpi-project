@@ -26,4 +26,6 @@ public class Character : IBattleUnit
     
     public int HandDmg { get; set; }
     public int MagicPower { get; set; }
+
+    public int CurrentRoomId { get; set; }
 }

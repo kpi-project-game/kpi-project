@@ -1,91 +1,157 @@
-using KPI_PROJECT.Database;
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using KPI_PROJECT.Models;
-using KPI_PROJECT.Models.CharacterFactory;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
+using KPI_PROJECT.Services;
+using KPI_PROJECT.Models.Enums;
+using KPI_PROJECT.Models.BaseClasses;
+using KPI_PROJECT.Models.CharacterFactory;
+using KPI_PROJECT.Models.Items;
 
-namespace KPI_PROJECT.Telegram.Handlers;
+namespace KPI_PROJECT.Handlers;
 
 public class BotManager
 {
-    private readonly DatabaseManager _dbManager = new DatabaseManager();
-    private string botToken { get; set; }
-    string tokenPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Telegram", "Token.txt");
+    private readonly DatabaseManager _dbManager = new();
     private readonly ITelegramBotClient _botClient;
-    
-     public BotManager()
-     {
-         if (!File.Exists(tokenPath))
-         {
-             throw new FileNotFoundException("No Token file found");
-         }
-         botToken = File.ReadAllText(tokenPath).Trim();
-         _botClient = new TelegramBotClient(botToken);
-     }
 
-     public async Task StartAsync()
-     {
-         _botClient.StartReceiving(HandleUpdateAsync, HandleErrorAsync, null, CancellationToken.None);
-     }
-     
-     private async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
-     {
-         if (update.Type == UpdateType.CallbackQuery)
-         {
-             long id = update.CallbackQuery.From.Id;
-             string callbackData = update.CallbackQuery.Data;
-             string username = update.CallbackQuery.From.Username ?? "Unknown";
+    public BotManager(ITelegramBotClient botClient)
+    {
+        _botClient = botClient;
+    }
 
-             await botClient.AnswerCallbackQuery(update.CallbackQuery.Id, cancellationToken: cancellationToken);
+    private List<BaseItem> GetRoomLoot()
+    {
+        return new List<BaseItem> 
+        { 
+            new RedHeart(), 
+            new IronPlate()
+        };
+    }
 
-             _dbManager.EnsureUserExists(id, username);
-             Character newHero = CharacterFactory.CreateFromClass(id, callbackData);
-             _dbManager.SaveCharacter(newHero);
+    public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
+    {
+        if (update.Type == UpdateType.CallbackQuery)
+        {
+            long id = update.CallbackQuery.From.Id;
+            string data = update.CallbackQuery.Data;
 
-             await botClient.SendMessage(id, $"Path chosen! You are a {newHero.Class}. HP: {newHero.Hp}/{newHero.MaxHp}.", cancellationToken: cancellationToken);
-             return;
-         }
+            await botClient.AnswerCallbackQuery(update.CallbackQuery.Id);
 
-         if (update.Type == UpdateType.Message && update.Message?.Text != null)
-         {
-             long id = update.Message.From.Id;
-             string messageText = update.Message.Text;
+            if (data.StartsWith("class_"))
+            {
+                _dbManager.EnsureUserExists(id, update.CallbackQuery.From.Username ?? "Unknown");
+                Character hero = CharacterFactory.CreateFromClass(id, data);
+                
+                int charId = _dbManager.SaveCharacter(hero);
+                hero.Id = charId; 
+                
+                int r1 = _dbManager.CreateRoom(charId, RoomType.Empty);
+                int r2 = _dbManager.CreateRoom(charId, RoomType.Empty);
+                int r3 = _dbManager.CreateRoom(charId, RoomType.Loot);
+                int r4 = _dbManager.CreateRoom(charId, RoomType.Exit);
 
-             if (messageText == "/start")
-             {
-                 var classChoose = new InlineKeyboardMarkup(new[]
-                 {
-                     new []
-                     {
-                         InlineKeyboardButton.WithCallbackData("Thief", "class_thief"),
-                         InlineKeyboardButton.WithCallbackData("Warrior", "class_warrior"),
-                         InlineKeyboardButton.WithCallbackData("Paladin", "class_paladin")
-                     }
-                 });
+                _dbManager.CreateConnection(r1, r2, "North");
+                _dbManager.CreateConnection(r2, r1, "South");
+                _dbManager.CreateConnection(r2, r3, "East");
+                _dbManager.CreateConnection(r3, r2, "West");
+                _dbManager.CreateConnection(r2, r4, "North");
 
-                 await botClient.SendMessage(id, "This will be a very long night...\nChoose thyself:", replyMarkup: classChoose, cancellationToken: cancellationToken);
-                 return;
-             }
+                _dbManager.UpdateCharacterRoom(id, r1);
+                hero.CurrentRoomId = r1;
 
-             Character? currentHero = _dbManager.GetActiveCharacter(id);
+                await ShowRoom(id, hero);
+            }
+            else if (data.StartsWith("move_to:"))
+            {
+                int targetId = int.Parse(data.Split(':')[1]);
+                _dbManager.UpdateCharacterRoom(id, targetId);
+                Character? hero = _dbManager.GetActiveCharacter(id);
+                if (hero != null) await ShowRoom(id, hero);
+            }
+            else if (data.StartsWith("action_loot:"))
+            {
+                int roomId = int.Parse(data.Split(':')[1]);
+                Character? hero = _dbManager.GetActiveCharacter(id);
+                
+                if (hero != null)
+                {
+                    var foundItems = GetRoomLoot();
+                    string lootMsg = "🎉 You found items:\n\n";
 
-             if (currentHero == null)
-             {
-                 await botClient.SendMessage(id, "Your character is dead or not created. Type /start to begin.", cancellationToken: cancellationToken);
-                 return;
-             }
+                    foreach (var item in foundItems)
+                    {
+                        item.AddBonuses(hero);
+                        _dbManager.AddItemToInventory(hero.Id, item.Name);
+                        lootMsg += $"**{item.Name}** ({item.Rarity})\n_{item.Description}_\n\n";
+                    }
 
-             await botClient.SendMessage(id, $"[{currentHero.Class}] is ready! HP: {currentHero.Hp}/{currentHero.MaxHp}", cancellationToken: cancellationToken);
-         }
-     }
-     private Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
-     {
-         Console.WriteLine($"Error: {exception.Message}");
-         return Task.CompletedTask;
-     }
+                    _dbManager.UpdateCharacterStats(hero);
+                    _dbManager.ChangeRoomType(roomId, RoomType.Empty);
+                    
+                    await botClient.SendMessage(id, lootMsg, parseMode: ParseMode.Markdown);
+                    await ShowRoom(id, hero);
+                }
+            }
+            return;
+        }
+
+        if (update.Type == UpdateType.Message && update.Message?.Text != null)
+        {
+            long id = update.Message.From.Id;
+            if (update.Message.Text == "/start")
+            {
+                var menu = new InlineKeyboardMarkup(new[] {
+                    new [] { InlineKeyboardButton.WithCallbackData("Warrior", "class_warrior"), 
+                             InlineKeyboardButton.WithCallbackData("Thief", "class_thief"),
+                             InlineKeyboardButton.WithCallbackData("Paladin",  "class_Paladin")
+                    }
+                });
+                await botClient.SendMessage(id, "Choose class:", replyMarkup: menu);
+            }
+            else
+            {
+                Character? hero = _dbManager.GetActiveCharacter(id);
+                if (hero != null)
+                {
+                    await ShowRoom(id, hero);
+                }
+            }
+        }
+    }
+
+    private async Task ShowRoom(long chatId, Character hero)
+    {
+        var room = _dbManager.GetRoom(hero.CurrentRoomId);
+        if (room == null) return;
+
+        var inv = _dbManager.GetInventory(hero.Id);
+        string bag = inv.Count > 0 ? string.Join(", ", inv) : "Empty";
+
+        string icon = room.Type switch { RoomType.Loot => "🎁", RoomType.Exit => "🚪", _ => "🌫️" };
+        
+        string msg = $"{icon} **Room Type: {room.Type}**\n" +
+                     $"❤ HP: {hero.Hp}/{hero.MaxHp} | 🪄 MP: {hero.MagicPower}\n" +
+                     $"🛡 Def: {hero.PhisDefense} | ⚔️ Dmg: {hero.HandDmg}\n" +
+                     $"🎒 Bag: {bag}\n\nWhere to?";
+
+        var buttons = new List<InlineKeyboardButton[]>();
+        
+        if (room.Type == RoomType.Loot)
+        {
+            buttons.Add(new[] { InlineKeyboardButton.WithCallbackData("🔍 Search the Room", $"action_loot:{room.Id}") });
+        }
+
+        foreach (var ex in room.Exits)
+        {
+            buttons.Add(new[] { InlineKeyboardButton.WithCallbackData($"Go {ex.Direction}", $"move_to:{ex.TargetRoomId}") });
+        }
+
+        await _botClient.SendMessage(chatId, msg, replyMarkup: new InlineKeyboardMarkup(buttons), parseMode: ParseMode.Markdown);
+    }
 }
-     
-     
-    
