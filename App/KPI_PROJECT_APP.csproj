@@ -20,7 +20,12 @@
       <Folder Include="Models\Items\Legendary\" />
       <Folder Include="Models\Items\Uncommon\" />
       <Folder Include="Models\Skills\" />
-      <Folder Include="Telegram\Handlers\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="Telegram\Token.txt">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>

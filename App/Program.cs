@@ -1,9 +1,14 @@
 ﻿using KPI_PROJECT.Models.FirstLevelEnemies;
+using KPI_PROJECT.Telegram.Handlers;
 
 class Program
 {
-    static void Main(string[] args)
+    static async Task Main(string[] args)
     {
-        StarterMagician df = new StarterMagician();
+        BotManager botManager = new BotManager();
+        await botManager.StartAsync();
+
+        Console.WriteLine("Bot started");
+        Console.ReadLine();
     }
 }

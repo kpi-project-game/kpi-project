@@ -6,8 +6,8 @@ public class SpikyGlove : BaseItem
     public override string Description => "It probably hurts to get punched with...\n\nAdds 3 to Hand Damage";
     public override Rarity Rarity => Rarity.Common;
 
-    public override void AddBonuses(Player player)
+    public override void AddBonuses(Character character)
     {
-        player.HandDmg += 3;
+        character.HandDmg += 3;
     }
 }

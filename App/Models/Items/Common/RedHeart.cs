@@ -6,9 +6,9 @@ public class RedHeart : BaseItem
     public override string Description => "It looks way too realistic... IT STILL BEATS!?...\n\nAdds 15 Max HP";
     public override Rarity Rarity => Rarity.Common;
 
-    public override void AddBonuses(Player player)
+    public override void AddBonuses(Character character)
     {
-        player.MaxHp += 15;
-        player.Hp += 15;
+        character.MaxHp += 15;
+        character.Hp += 15;
     }
 }
