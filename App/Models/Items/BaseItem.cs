@@ -6,7 +6,7 @@ public abstract class BaseItem
     public abstract string Description { get; }
     public abstract Rarity Rarity { get; }
 
-    public abstract void AddBonuses(Player player);
+    public abstract void AddBonuses(Character character);
 }
 
 public enum Rarity
