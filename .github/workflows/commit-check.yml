@@ -14,7 +14,7 @@ jobs:
       - name: Check Commit Message
         uses: gsactions/commit-message-checker@v2
         with:
-          pattern: '^PRJ-[0-9]+'
+          pattern: '^(PRJ-[0-9]+|Merge (pull request|branch))'
           flags: 'gm'
           error: 'Rejecting push: Your commit message must START with a Trello task ID (e.g., PRJ-1: Added database).'
           excludeDescription: 'true'
