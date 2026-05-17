@@ -1,47 +1,71 @@
 ﻿using KPI_PROJECT.Handlers;
-using KPI_PROJECT.Models.FirstLevelEnemies;
 using KPI_PROJECT.Services;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types.Enums;
+using Serilog;
 
 class Program
 {
     static async Task Main(string[] args)
     {
-        var dbManager = new DatabaseManager();
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Debug()
+            .WriteTo.Console()    
+            .WriteTo.File("logs/bot-log-.txt", rollingInterval: RollingInterval.Day)
+            .CreateLogger();
 
-        string tokenPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Telegram", "Token.txt");
-        string botToken = await File.ReadAllTextAsync(tokenPath);
-        
-        var botClient = new TelegramBotClient(botToken.Trim());
-        BotManager botManager = new BotManager(botClient);
-
-        using CancellationTokenSource cts = new();
-
-        ReceiverOptions receiverOptions = new()
+        try
         {
-            AllowedUpdates = Array.Empty<UpdateType>() 
-        };
+            Log.Information("Ініціалізація бази даних та токена...");
+            var dbManager = new DatabaseManager();
 
-        botClient.StartReceiving(
-            updateHandler: botManager.HandleUpdateAsync,
-            errorHandler: ErrorHandler,
-            receiverOptions: receiverOptions,
-            cancellationToken: cts.Token
-        );
+            string tokenPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Telegram", "Token.txt");
+            string botToken = await File.ReadAllTextAsync(tokenPath);
 
-        var me = await botClient.GetMe();
-        Console.WriteLine($"Bot started successfully: @{me.Username}");
-        Console.WriteLine("Pres enter to stop...");
-        Console.ReadLine();
+            var botClient = new TelegramBotClient(botToken.Trim());
+            BotManager botManager = new BotManager(botClient);
 
-        cts.Cancel(); 
+            using CancellationTokenSource cts = new();
+
+            ReceiverOptions receiverOptions = new()
+            {
+                AllowedUpdates = Array.Empty<UpdateType>()
+            };
+
+            botClient.StartReceiving(
+                updateHandler: botManager.HandleUpdateAsync,
+                errorHandler: ErrorHandler,
+                receiverOptions: receiverOptions,
+                cancellationToken: cts.Token
+            );
+
+            var me = await botClient.GetMe();
+
+            //Log.Information("Bot started successfully: @{Username}", me.Username);
+            Console.WriteLine("Press enter to stop...");
+            Console.ReadLine();
+
+            Log.Information("Stoping bot...");
+            await cts.CancelAsync();
+        }
+        catch (FileNotFoundException ex)
+        {
+            Log.Fatal(ex, "Fatal error while loading a token!");
+        }
+        catch (Exception ex)
+        {
+            Log.Fatal(ex, "Fatal error while program have been working!");
+        }
+        finally
+        {
+            await Log.CloseAndFlushAsync();
+        }
     }
 
     private static Task ErrorHandler(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
     {
-        Console.WriteLine($"Error: {exception.Message}");
+        Log.Error(exception, "Telegram API error: {Message}", exception.Message);
         return Task.CompletedTask;
     }
 }

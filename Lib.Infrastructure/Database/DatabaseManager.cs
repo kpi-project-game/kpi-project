@@ -1,9 +1,6 @@
 using Microsoft.Data.Sqlite;
 using KPI_PROJECT.Models.Map;
 using KPI_PROJECT.Models.Enums;
-using KPI_PROJECT.Models.BaseClasses;
-using System;
-using System.Collections.Generic;
 using KPI_PROJECT.Models;
 
 namespace KPI_PROJECT.Services;
