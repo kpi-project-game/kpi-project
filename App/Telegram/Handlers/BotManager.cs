@@ -232,7 +232,7 @@ public class BotManager
 
         string icon = room.Type switch { RoomType.Loot => "🎁", RoomType.Exit => "🚪", _ => "🌫️" };
 
-        string msg = $"{icon} **Room: {room.Type}**\n" +
+        string msg = $"{icon} **Room : {room.Type}**\n" +
                      $"❤️ HP: {hero.Hp}/{hero.MaxHp} | 🪄 MP: {hero.MagicPower}\n" +
                      $"🛡 Def: {hero.PhisDefense} | ⚔️ Dmg: {hero.HandDmg}\n" +
                      $"⌛ Turns left: {hero.TurnsLeft}\n" +
