@@ -1,6 +1,7 @@
 using Lib.Core.Enums;
 using Lib.Core.Interfaces;
 using Lib.Core.Models.Items;
+using Lib.Core.Models.Skills.DefaultSkills;
 using Lib.Core.Models.StatesAndEffects;
 
 namespace Lib.Core.BaseClasses;
@@ -20,7 +21,12 @@ public class Character : IBattleUnit
     
     public int BasePhisDefense { get; set; }
     public int PhisDefense { get; set; }
-    
+
+    public List<ISkill> Skills { get; set; } = new List<ISkill>()
+    {
+        new HandAttack(),
+        new Defend()
+    };
     public List<ActiveEffect> CurrentEffects { get; set; } = new();
     public List<BaseItem> Items { get; set; } = new();
     
