@@ -29,6 +29,8 @@ public class Character : IBattleUnit
     };
     public List<ActiveEffect> CurrentEffects { get; set; } = new();
     public List<BaseItem> Items { get; set; } = new();
+
+    public bool EternalBanana { get; set; } = false;
     
     public int HandDmg { get; set; }
     public int MagicPower { get; set; }
