@@ -29,6 +29,8 @@ public class Character : IBattleUnit
     };
     public List<ActiveEffect> CurrentEffects { get; set; } = new();
     public List<BaseItem> Items { get; set; } = new();
+
+    public bool EternalBanana { get; set; } = false;
     
     public int HandDmg { get; set; }
     public int MagicPower { get; set; }
@@ -37,6 +39,7 @@ public class Character : IBattleUnit
     public int State { get; set; } = 0;
     public int Location { get; set; } = 1;
     public int Floor { get; set; } = 1;
+    public int MaxTurns { get; set; } = 25;
     public int TurnsLeft { get; set; } = 25;
     public int MapWidth { get; set; } = 4;
     public int MapHeight { get; set; } = 3;
