@@ -13,8 +13,8 @@ public class Skeleton : EnemyBase, IBattleUnit
         HandDmg = 11;
         Name = "Skeleton";
         PhisDefense = 7;
-        CurrentSkills.Add(new Frenzy(2));
-        CurrentSkills.Add(new Frighten());
+        Skills.Add(new Frenzy(2));
+        Skills.Add(new Frighten());
     }
     
     public override void CastSkill(ISkill chosenSkill, IBattleUnit target)

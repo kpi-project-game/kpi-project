@@ -13,9 +13,9 @@ public class Zombie : EnemyBase, IBattleUnit
         HandDmg = 12;
         Name = "Zombie";
         PhisDefense = 8;
-        CurrentSkills.Add(new Frenzy(2));
-        CurrentSkills.Add(new Frighten());
-        CurrentSkills.Add(new Bite(15));
+        Skills.Add(new Frenzy(2));
+        Skills.Add(new Frighten());
+        Skills.Add(new Bite(15));
     }
     
     public override void CastSkill(ISkill chosenSkill, IBattleUnit target)

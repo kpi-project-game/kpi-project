@@ -1,8 +1,7 @@
-using System;
-using System.Collections.Generic;
 using Lib.Core.BaseClasses;
 using Lib.Core.Models.Enemies.FirstLevel;
 using Lib.Core.Models.Enemies.SecondLocation;
+using Lib.Core.Models.Enemies.ThirdLocation;
 using Serilog;
 
 namespace Lib.Core.Factories;
@@ -13,21 +12,39 @@ public static class EnemyFactory
 
     public static List<EnemyBase> GenerateEnemiesForLocation(int locationId)
     {
-        int count = _rand.Next(1, 4); 
+        int count = _rand.Next(1, 4);
         var enemies = new List<EnemyBase>();
-        
+
         for (int i = 0; i < count; i++)
         {
             enemies.Add(locationId switch
             {
                 1 => GetFirstLocationEnemy(),
                 2 => GetSecondLocationEnemy(),
+                3 => GetThirdLocationEnemy(),
                 _ => GetFirstLocationEnemy()
             });
         }
-        
+
         Log.Debug("Generated {EnemyCount} enemies for location {LocationId}", count, locationId);
         return enemies;
+    }
+
+    public static EnemyBase CreateByClassName(string className)
+    {
+        return className switch
+        {
+            "StarterMagician"  => new StarterMagician(),
+            "WiseMagician"     => new WiseMagician(),
+            "MagicianShishian" => new MagicianShishian(),
+            "Squire"           => new Squire(),
+            "RoyalKnight"      => new RoyalKnight(),
+            "Warlord"          => new Warlord(),
+            "Skeleton"         => new Skeleton(),
+            "Zombie"           => new Zombie(),
+            "HeadlessWarden"   => new HeadlessWarden(),
+            _                  => new StarterMagician()
+        };
     }
 
     private static EnemyBase GetFirstLocationEnemy()
@@ -49,18 +66,14 @@ public static class EnemyFactory
             _ => new Warlord()
         };
     }
-    
-    public static EnemyBase CreateByClassName(string className)
+
+    private static EnemyBase GetThirdLocationEnemy()
     {
-        return className switch
+        return _rand.Next(1, 4) switch
         {
-            "StarterMagician" => new StarterMagician(),
-            "WiseMagician" => new WiseMagician(),
-            "MagicianShishian" => new MagicianShishian(),
-            "Squire" => new Squire(),
-            "RoyalKnight" => new RoyalKnight(),
-            "Warlord" => new Warlord(),
-            _ => new StarterMagician()
+            1 => new Skeleton(),
+            2 => new Zombie(),
+            _ => new HeadlessWarden()
         };
     }
 }

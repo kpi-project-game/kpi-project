@@ -10,4 +10,5 @@ public interface IBattleUnit
     public int PhisDefense { get; set; }
     public int MagicPower { get; set; }
     public List<ActiveEffect> CurrentEffects { get; set; }
+    public List<ISkill> Skills { get; set; }
 }

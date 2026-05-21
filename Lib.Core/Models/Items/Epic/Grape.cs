@@ -8,7 +8,7 @@ public class Grape : BaseItem
     public override string Name => "\"Grape\"";
     public override string Description => "It looks like an eye...\n\nAdds Frenzy spell to your arsenal...";
     public override Rarity Rarity => Rarity.Epic;
-    public override void AddBonuses(Character character)
+    public override void AddBonuses(Character character, bool isFirstPickup = false)
     {
         character.Skills.Add(new Frenzy(3));
     }

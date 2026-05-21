@@ -14,8 +14,8 @@ public class StarterMagician : EnemyBase, IBattleUnit
         Name = "Wise Magician";
         MagicPower = 5;
         PhisDefense = 1;
-        CurrentSkills.Add(new FireballSkill(10));
-        CurrentSkills.Add(new CharmSkill());
+        Skills.Add(new FireballSkill(10));
+        Skills.Add(new CharmSkill());
     }
     
     public override void CastSkill(ISkill chosenSkill, IBattleUnit target)

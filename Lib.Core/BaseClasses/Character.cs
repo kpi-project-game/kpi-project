@@ -8,21 +8,19 @@ namespace Lib.Core.BaseClasses;
 
 public class Character : IBattleUnit
 {
-    public int Id { get; set; } 
-    
-    public long TelegramId { get; set; } 
-    
+    public int Id { get; set; }
+    public long TelegramId { get; set; }
     public string Class { get; set; }
     public int Level { get; set; } = 1;
-    public LocationName LocationName { get; set; } 
-    
+    public LocationName LocationName { get; set; }
+
     public int MaxHp { get; set; }
     public int Hp { get; set; }
-    
+
     public int BasePhisDefense { get; set; }
     public int PhisDefense { get; set; }
 
-    public List<ISkill> Skills { get; set; } = new List<ISkill>()
+    public List<ISkill> Skills { get; set; } = new List<ISkill>
     {
         new HandAttack(),
         new Defend()
@@ -30,8 +28,6 @@ public class Character : IBattleUnit
     public List<ActiveEffect> CurrentEffects { get; set; } = new();
     public List<BaseItem> Items { get; set; } = new();
 
-    public bool EternalBanana { get; set; } = false;
-    
     public int HandDmg { get; set; }
     public int MagicPower { get; set; }
 
@@ -39,8 +35,10 @@ public class Character : IBattleUnit
     public int State { get; set; } = 0;
     public int Location { get; set; } = 1;
     public int Floor { get; set; } = 1;
-    public int MaxTurns { get; set; } = 25;
     public int TurnsLeft { get; set; } = 25;
+    public int MaxTurns { get; set; } = 25;
     public int MapWidth { get; set; } = 4;
     public int MapHeight { get; set; } = 3;
+    public bool HasJokerEffect { get; set; } = false;
+    public int PreviousRoomId { get; set; } = 0;
 }

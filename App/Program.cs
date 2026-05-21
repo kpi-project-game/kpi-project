@@ -45,9 +45,7 @@ class Program
                 updateHandler: botManager.HandleUpdateAsync,
                 errorHandler: (ITelegramBotClient client, Exception exception, CancellationToken ct) => 
                 {
-                    Console.WriteLine();
                     Log.Error($"❌ Error: {exception}");
-                    Console.Write("\nPRESS ENTER TO STOP...");
                     return Task.CompletedTask;
                 },
                 receiverOptions: receiverOptions,
@@ -57,7 +55,7 @@ class Program
             var me = await botClient.GetMe();
             Log.Information($"🚀 BOT @{me.Username} STARTED AND WORKING PROPERLY");
             Console.Write("\nPRESS ENTER TO STOP...");
-        
+            
             Console.ReadLine();
             cts.Cancel();
         }

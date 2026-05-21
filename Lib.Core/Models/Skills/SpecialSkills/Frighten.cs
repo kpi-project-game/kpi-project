@@ -10,7 +10,7 @@ public class Frighten : ISkill
     {
         var frightened = target.CurrentEffects.Find(e => e.BattleStateEnum == BattleStateEnum.Frightened);
         
-        if (frightened != null)
+        if (frightened == null)
         {
             int duration = 1;
             target.CurrentEffects.Add(new ActiveEffect(BattleStateEnum.Frightened, duration));

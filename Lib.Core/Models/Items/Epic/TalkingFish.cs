@@ -8,7 +8,7 @@ public class TalkingFish : BaseItem
     public override string Name => "Talking Fish";
     public override string Description => "What?...\"What?\"... WHAT?!...\n\nAdds Fireball spell to your arsenal... why?...";
     public override Rarity Rarity => Rarity.Epic;
-    public override void AddBonuses(Character character)
+    public override void AddBonuses(Character character, bool isFirstPickup = false)
     {
         character.Skills.Add(new FireballSkill(10));
     }

@@ -13,9 +13,9 @@ public class WiseMagician : EnemyBase, IBattleUnit
         HandDmg = 6;
         Name = "Wise Magician";
         PhisDefense = 2;
-        CurrentSkills.Add(new FireballSkill(12));
-        CurrentSkills.Add(new CharmSkill());
-        CurrentSkills.Add(new ThunderStrikeSkill(5));
+        Skills.Add(new FireballSkill(12));
+        Skills.Add(new CharmSkill());
+        Skills.Add(new ThunderStrikeSkill(5));
     }
     
     public override void CastSkill(ISkill chosenSkill, IBattleUnit target)

@@ -13,10 +13,10 @@ public class Warlord : EnemyBase, IBattleUnit
         HandDmg = 10;
         Name = "Warlord";
         PhisDefense = 6;
-        CurrentSkills.Add(new Stechen(19));
-        CurrentSkills.Add(new Abschneiden(11, 4));
-        CurrentSkills.Add(new Einhorn(5));
-        CurrentSkills.Add(new Zwerchhau(4, 3));
+        Skills.Add(new Stechen(19));
+        Skills.Add(new Abschneiden(11, 4));
+        Skills.Add(new Einhorn(5));
+        Skills.Add(new Zwerchhau(4, 3));
     }
     
     public override void CastSkill(ISkill chosenSkill, IBattleUnit target)

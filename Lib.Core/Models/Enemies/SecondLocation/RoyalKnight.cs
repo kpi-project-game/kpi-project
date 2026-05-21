@@ -13,9 +13,9 @@ public class RoyalKnight : EnemyBase, IBattleUnit
         HandDmg = 9;
         Name = "RoyalKnight";
         PhisDefense = 5;
-        CurrentSkills.Add(new Stechen(18));
-        CurrentSkills.Add(new Abschneiden(10, 3));
-        CurrentSkills.Add(new Einhorn(3));
+        Skills.Add(new Stechen(18));
+        Skills.Add(new Abschneiden(10, 3));
+        Skills.Add(new Einhorn(3));
     }
     
     public override void CastSkill(ISkill chosenSkill, IBattleUnit target)

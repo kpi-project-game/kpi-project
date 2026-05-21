@@ -37,7 +37,7 @@ public class BotManager
         _battleRepo = new ActiveBattleRepository();
         _mapRuler = new MapRuler(_roomRepo, _charRepo, _battleRepo);
         _gameRuler = new GameRuler(_invRepo, _charRepo, _roomRepo);
-        _battleRuler = new BattleRuler(_charRepo, _battleRepo);
+        _battleRuler = new BattleRuler(_charRepo, _battleRepo, _roomRepo);
         _mapRenderer = new MapRenderer(_roomRepo);
     }
 
@@ -70,13 +70,18 @@ public class BotManager
 
                 var oldHero = _charRepo.GetActiveCharacter(id);
                 if (oldHero != null)
+                {
                     _charRepo.KillCharacter(oldHero.Id);
+                }
 
                 hero = CharacterFactory.CreateFromClass(id, data);
                 hero.Id = _charRepo.SaveCharacter(hero);
                 _mapRuler.GenerateLocationOne(hero.Id, id, floor: 1);
                 hero = _charRepo.GetActiveCharacter(id);
-                if (hero != null) await ShowRoom(id, hero);
+                if (hero != null)
+                {
+                    await ShowRoom(id, hero);
+                }
             }
             else if (data.StartsWith("move_to:"))
             {
@@ -104,16 +109,26 @@ public class BotManager
                     int floor = int.Parse(parts[2]);
                     await botClient.SendMessage(id, $"🚪 *You descend deeper...*\n📍 Location {loc}, Floor {floor}", parseMode: ParseMode.Markdown);
                     hero = _charRepo.GetActiveCharacter(id);
-                    if (hero != null) await ShowRoom(id, hero);
+                    if (hero != null)
+                    {
+                        await ShowRoom(id, hero);
+                    }
                     return;
                 }
 
-                if (hero == null) return;
+                if (hero == null)
+                {
+                    return;
+                }
 
                 if (hero.State == 1)
+                {
                     await ShowBattle(id, hero);
+                }
                 else
+                {
                     await ShowRoom(id, hero);
+                }
             }
             else if (data.StartsWith("action_loot:"))
             {
@@ -123,19 +138,28 @@ public class BotManager
                     string lootMsg = _gameRuler.ProcessLooting(hero, roomId);
                     await botClient.SendMessage(id, lootMsg, parseMode: ParseMode.Markdown);
                     hero = _charRepo.GetActiveCharacter(id);
-                    if (hero != null) await ShowRoom(id, hero);
+                    if (hero != null)
+                    {
+                        await ShowRoom(id, hero);
+                    }
                 }
             }
             else if (data.StartsWith("flee_to:"))
             {
                 int prevRoomId = int.Parse(data.Split(':')[1]);
+                if (hero == null) return;
+                if (prevRoomId == 0)
+                {
+                    await botClient.SendMessage(id, "🚫 Nowhere to run!", parseMode: ParseMode.Markdown);
+                    return;
+                }
+                hero.TurnsLeft--;
+                _charRepo.UpdateTurnsLeft(hero.Id, hero.TurnsLeft);
+                _charRepo.UpdateCharacterRoom(id, prevRoomId);
+                hero = _charRepo.GetActiveCharacter(id);
                 if (hero != null)
                 {
-                    hero.TurnsLeft--;
-                    _charRepo.UpdateTurnsLeft(hero.Id, hero.TurnsLeft);
-                    _charRepo.UpdateCharacterRoom(id, prevRoomId);
-                    hero = _charRepo.GetActiveCharacter(id);
-                    if (hero != null) await ShowRoom(id, hero);
+                    await ShowRoom(id, hero);
                 }
             }
             else if (data == "battle_action:attack")
@@ -154,42 +178,147 @@ public class BotManager
                     });
                 }
                 buttons.Add(new[] { InlineKeyboardButton.WithCallbackData("« Back", "battle_back") });
-
                 await botClient.SendMessage(id, "Choose your target:", replyMarkup: new InlineKeyboardMarkup(buttons));
             }
             else if (data == "battle_action:defend")
             {
-                if (hero == null) return;
+                if (hero == null)
+                {
+                    return;
+                }
                 string defendResult = _battleRuler.ProcessDefend(id);
                 await botClient.SendMessage(id, defendResult, parseMode: ParseMode.Markdown);
                 hero = _charRepo.GetActiveCharacter(id);
-                if (hero != null) await ShowBattle(id, hero);
+                if (hero != null)
+                {
+                    await ShowBattle(id, hero);
+                }
+            }
+            else if (data == "battle_action:skills")
+            {
+                if (hero == null)
+                {
+                    return;
+                }
+
+                var skillButtons = new List<InlineKeyboardButton[]>();
+                for (int i = 0; i < hero.Skills.Count; i++)
+                {
+                    if (hero.Skills[i].Name == "Hand Attack" || hero.Skills[i].Name == "Defend") continue;
+                    skillButtons.Add(new[]
+                    {
+                        InlineKeyboardButton.WithCallbackData($"✨ {hero.Skills[i].Name}", $"battle_skill:{i}")
+                    });
+                }
+
+                if (skillButtons.Count == 0)
+                {
+                    await botClient.AnswerCallbackQuery(
+                        update.CallbackQuery.Id,
+                        "You have no skills yet! Find items to unlock them.",
+                        showAlert: true);
+                    return;
+                }
+
+                skillButtons.Add(new[] { InlineKeyboardButton.WithCallbackData("« Back", "battle_back") });
+                await botClient.SendMessage(id, "Choose a skill:", replyMarkup: new InlineKeyboardMarkup(skillButtons));
+            }
+            else if (data.StartsWith("battle_skill:"))
+            {
+                if (hero == null)
+                {
+                    return;
+                }
+                var parts = data.Split(':');
+
+                if (parts.Length == 2)
+                {
+                    int skillIndex = int.Parse(parts[1]);
+                    var (_, enemies) = _battleRuler.GetBattleState(id);
+
+                    var buttons = new List<InlineKeyboardButton[]>();
+                    for (int i = 0; i < enemies.Count; i++)
+                    {
+                        buttons.Add(new[]
+                        {
+                            InlineKeyboardButton.WithCallbackData(
+                                $"🎯 {enemies[i].Name} (HP: {enemies[i].Hp})",
+                                $"battle_skill:{skillIndex}:{i}")
+                        });
+                    }
+                    buttons.Add(new[] { InlineKeyboardButton.WithCallbackData("« Back", "battle_action:skills") });
+                    await botClient.SendMessage(id, "Choose your target:", replyMarkup: new InlineKeyboardMarkup(buttons));
+                }
+                else if (parts.Length == 3)
+                {
+                    int skillIndex = int.Parse(parts[1]);
+                    int enemyIndex = int.Parse(parts[2]);
+
+                    var (skillResult, battleResult) = _battleRuler.ProcessSkill(id, skillIndex, enemyIndex);
+                    await botClient.SendMessage(id, skillResult, parseMode: ParseMode.Markdown);
+
+                    if (battleResult == BattleResult.Defeat) return;
+
+                    hero = _charRepo.GetActiveCharacter(id);
+                    if (hero == null)
+                    {
+                        return;
+                    }
+
+                    if (battleResult == BattleResult.Victory || hero.State == 0)
+                    {
+                        await ShowRoom(id, hero);
+                    }
+                    else
+                    {
+                        await ShowBattle(id, hero);
+                    }
+                }
             }
             else if (data == "battle_back")
             {
-                if (hero != null) await ShowBattle(id, hero);
+                if (hero != null)
+                {
+                    await ShowBattle(id, hero);
+                }
             }
             else if (data.StartsWith("battle_target:"))
             {
                 int enemyIndex = int.Parse(data.Split(':')[1]);
-                if (hero == null) return;
+                if (hero == null)
+                {
+                    return;
+                }
 
                 var (attackResult, battleResult) = _battleRuler.ProcessAttack(id, enemyIndex);
                 await botClient.SendMessage(id, attackResult, parseMode: ParseMode.Markdown);
 
-                if (battleResult == BattleResult.Defeat) return;
+                if (battleResult == BattleResult.Defeat)
+                {
+                    return;
+                }
 
                 hero = _charRepo.GetActiveCharacter(id);
-                if (hero == null) return;
+                if (hero == null)
+                {
+                    return;
+                }
 
                 if (battleResult == BattleResult.Victory || hero.State == 0)
+                {
                     await ShowRoom(id, hero);
+                }
                 else
+                {
                     await ShowBattle(id, hero);
+                }
             }
             else if (data.StartsWith("fight:"))
             {
-                if (hero == null) return;
+                if (hero == null)
+                {
+                    return;
+                }
                 _charRepo.UpdateCharacterState(hero.Id, 1);
                 var enemies = EnemyFactory.GenerateEnemiesForLocation(hero.Location);
                 string enemiesJson = System.Text.Json.JsonSerializer.Serialize(
@@ -220,7 +349,10 @@ public class BotManager
                 int floor = int.Parse(parts[2]);
                 await botClient.SendMessage(id, $"🚪 *You descend deeper...*\n📍 Location {loc}, Floor {floor}", parseMode: ParseMode.Markdown);
                 hero = _charRepo.GetActiveCharacter(id);
-                if (hero != null) await ShowRoom(id, hero);
+                if (hero != null)
+                {
+                    await ShowRoom(id, hero);
+                }
             }
 
             return;
@@ -245,12 +377,19 @@ public class BotManager
             else
             {
                 Character? hero = _charRepo.GetActiveCharacter(id);
-                if (hero == null) return;
+                if (hero == null)
+                {
+                    return;
+                }
 
                 if (hero.State == 1)
+                {
                     await ShowBattle(id, hero);
+                }
                 else
+                {
                     await ShowRoom(id, hero);
+                }
             }
         }
     }
@@ -262,7 +401,8 @@ public class BotManager
         var buttons = new List<InlineKeyboardButton[]>
         {
             new[] { InlineKeyboardButton.WithCallbackData("⚔️ Attack", "battle_action:attack") },
-            new[] { InlineKeyboardButton.WithCallbackData("🛡 Defend", "battle_action:defend") }
+            new[] { InlineKeyboardButton.WithCallbackData("🛡 Defend", "battle_action:defend") },
+            new[] { InlineKeyboardButton.WithCallbackData("✨ Skills", "battle_action:skills") }
         };
 
         await _botClient.SendMessage(chatId, msg, replyMarkup: new InlineKeyboardMarkup(buttons), parseMode: ParseMode.Markdown);
@@ -297,12 +437,14 @@ public class BotManager
 
         if (room.Type == RoomType.Loot)
         {
-            buttons.Add(new[] { InlineKeyboardButton.WithCallbackData("🔍 Search the Room (1 turn)", $"action_loot:{room.Id}") });
+            buttons.Add(new[]
+                { InlineKeyboardButton.WithCallbackData("🔍 Search the Room (1 turn)", $"action_loot:{room.Id}") });
         }
 
         if (room.Type == RoomType.Enemy)
         {
             buttons.Add(new[] { InlineKeyboardButton.WithCallbackData("⚔️ Fight! (1 turn)", $"fight:{room.Id}") });
+            buttons.Add(new[] { InlineKeyboardButton.WithCallbackData("🏃 Flee (1 turn)", $"flee_to:{hero.PreviousRoomId}") });
         }
 
         if (room.Type == RoomType.Exit)
@@ -312,8 +454,8 @@ public class BotManager
 
         foreach (var ex in room.Exits)
         {
-            string exitLabel = $"Go {ex.Direction}";
-            buttons.Add(new[] { InlineKeyboardButton.WithCallbackData(exitLabel, $"move_to:{ex.TargetRoomId}") });
+            if (room.Type == RoomType.Enemy) continue;
+            buttons.Add(new[] { InlineKeyboardButton.WithCallbackData($"Go {ex.Direction}", $"move_to:{ex.TargetRoomId}") });
         }
 
         await _botClient.SendMessage(chatId, msg, replyMarkup: new InlineKeyboardMarkup(buttons), parseMode: ParseMode.Markdown);
