@@ -111,4 +111,26 @@ public class RoomRepository : BaseRepository
         }
         return rooms;
     }
+    public void ClearMapForCharacter(int charId)
+    {
+        using var connection = new SqliteConnection(_connectionString);
+        connection.Open();
+
+        var cmd1 = connection.CreateCommand();
+        cmd1.CommandText = @"
+        DELETE FROM RoomConnections 
+        WHERE FromRoomId IN (SELECT Id FROM Rooms WHERE CharacterId = @CharId)";
+        cmd1.Parameters.AddWithValue("@CharId", charId);
+        cmd1.ExecuteNonQuery();
+
+        var cmd2 = connection.CreateCommand();
+        cmd2.CommandText = "DELETE FROM ExploredRooms WHERE CharacterId = @CharId";
+        cmd2.Parameters.AddWithValue("@CharId", charId);
+        cmd2.ExecuteNonQuery();
+        
+        var cmd3 = connection.CreateCommand();
+        cmd3.CommandText = "DELETE FROM Rooms WHERE CharacterId = @CharId";
+        cmd3.Parameters.AddWithValue("@CharId", charId);
+        cmd3.ExecuteNonQuery();
+    }
 }

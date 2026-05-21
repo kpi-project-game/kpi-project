@@ -8,7 +8,7 @@ public class FencingBook : BaseItem
     public override string Name => "Fencing Book";
     public override string Description => "It's written in German...\n\nAdds Zwerchhau spell to your arsenal...";
     public override Rarity Rarity => Rarity.Uncommon;
-    public override void AddBonuses(Character character)
+    public override void AddBonuses(Character character, bool isFirstPickup = false)
     {
         character.Skills.Add(new Zwerchhau(4, 3));
     }

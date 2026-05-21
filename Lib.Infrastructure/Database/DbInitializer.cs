@@ -35,6 +35,7 @@ public class DbInitializer : BaseRepository
                 TurnsLeft INTEGER DEFAULT 25,
                 MapWidth INTEGER DEFAULT 4,
                 MapHeight INTEGER DEFAULT 3,
+                PreviousRoomId INTEGER DEFAULT 0,
                 FOREIGN KEY (TelegramId) REFERENCES Users(TelegramId)
             )",
 

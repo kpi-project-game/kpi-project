@@ -8,7 +8,7 @@ public class Lipstick : BaseItem
     public override string Name => "Lipstick";
     public override string Description => "It's blue and smells like... strawberries?...\n\nAdds Charm spell to your arsenal... why?...";
     public override Rarity Rarity => Rarity.Epic;
-    public override void AddBonuses(Character character)
+    public override void AddBonuses(Character character, bool isFirstPickup = false)
     {
         character.Skills.Add(new CharmSkill());
     }

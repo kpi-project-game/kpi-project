@@ -13,9 +13,9 @@ public class HeadlessWarden : EnemyBase, IBattleUnit
         HandDmg = 13;
         Name = "HeadlessWarden";
         PhisDefense = 9;
-        CurrentSkills.Add(new Frenzy(2));
-        CurrentSkills.Add(new Frighten());
-        CurrentSkills.Add(new HalebardStrike(18));
+        Skills.Add(new Frenzy(2));
+        Skills.Add(new Frighten());
+        Skills.Add(new HalebardStrike(18));
     }
     
     public override void CastSkill(ISkill chosenSkill, IBattleUnit target)

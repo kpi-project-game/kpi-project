@@ -13,10 +13,10 @@ public class MagicianShishian : EnemyBase, IBattleUnit
         HandDmg = 7;
         Name = "Magician Shishian";
         PhisDefense = 3;
-        CurrentSkills.Add(new FireballSkill(15));
-        CurrentSkills.Add(new CharmSkill());
-        CurrentSkills.Add(new ThunderStrikeSkill(6));
-        CurrentSkills.Add(new Doom());
+        Skills.Add(new FireballSkill(15));
+        Skills.Add(new CharmSkill());
+        Skills.Add(new ThunderStrikeSkill(6));
+        Skills.Add(new Doom());
     }
     
     public override void CastSkill(ISkill chosenSkill, IBattleUnit target)

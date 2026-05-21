@@ -1,7 +1,9 @@
 using Lib.Core.BaseClasses;
+using Lib.Core.Models.Factories;
+using Lib.Infrastructure.Database;
+using Lib.Infrastructure.Services;
 using Microsoft.Data.Sqlite;
 using System;
-using Lib.Infrastructure.Services;
 
 namespace Lib.Infrastructure.Database.Repositories;
 
@@ -12,12 +14,12 @@ public class CharacterRepository : BaseRepository
         using var connection = new SqliteConnection(_connectionString);
         connection.Open();
         var command = connection.CreateCommand();
-        
+
         command.CommandText = @"
             INSERT INTO Characters (TelegramId, Class, Level, HP, MaxHP, HandDmg, PhisDefense, BasePhisDefense, MagicPower, Location, Floor) 
             VALUES ($tgId, $class, $lvl, $hp, $mhp, $dmg, $def, $bdef, $mp, $loc, $floor);
             SELECT last_insert_rowid();";
-        
+
         command.Parameters.AddWithValue("$tgId", c.TelegramId);
         command.Parameters.AddWithValue("$class", c.Class);
         command.Parameters.AddWithValue("$lvl", c.Level);
@@ -40,11 +42,11 @@ public class CharacterRepository : BaseRepository
         var command = connection.CreateCommand();
         command.CommandText = "SELECT * FROM Characters WHERE TelegramId = $tgId AND IsAlive = 1 LIMIT 1";
         command.Parameters.AddWithValue("$tgId", telegramId);
-
+        
         using var reader = command.ExecuteReader();
         if (reader.Read())
         {
-            return new Character
+            var character = new Character
             {
                 Id = reader.GetInt32(reader.GetOrdinal("Id")),
                 TelegramId = reader.GetInt64(reader.GetOrdinal("TelegramId")),
@@ -62,13 +64,24 @@ public class CharacterRepository : BaseRepository
                 Floor = reader.GetInt32(reader.GetOrdinal("Floor")),
                 TurnsLeft = reader.GetInt32(reader.GetOrdinal("TurnsLeft")),
                 MapWidth = reader.GetInt32(reader.GetOrdinal("MapWidth")),
-                MapHeight = reader.GetInt32(reader.GetOrdinal("MapHeight"))
-                
+                MapHeight = reader.GetInt32(reader.GetOrdinal("MapHeight")),
+                PreviousRoomId = reader.GetInt32(reader.GetOrdinal("PreviousRoomId")),
             };
+
+            reader.Close();
+            var invRepo = new InventoryRepository();
+            var itemNames = invRepo.GetInventory(character.Id);
+            foreach (var itemName in itemNames)
+            {
+                var item = ItemFactory.CreateByName(itemName);
+                item?.AddBonuses(character, false);
+            }
+
+            return character;
         }
         return null;
     }
-    
+
     public void UpdateMapSize(int charId, int width, int height)
     {
         using var connection = new SqliteConnection(_connectionString);
@@ -80,7 +93,7 @@ public class CharacterRepository : BaseRepository
         command.Parameters.AddWithValue("$id", charId);
         command.ExecuteNonQuery();
     }
-    
+
     public void UpdateLocationAndFloor(int charId, int location, int floor)
     {
         using var connection = new SqliteConnection(_connectionString);
@@ -100,19 +113,13 @@ public class CharacterRepository : BaseRepository
         var command = connection.CreateCommand();
         command.CommandText = @"
         UPDATE Characters 
-        SET HP = $hp, MaxHP = $mhp, HandDmg = $dmg, 
-            PhisDefense = $def, BasePhisDefense = $bdef, MagicPower = $mp 
+        SET HP = $hp 
         WHERE Id = $id";
-    
+
         command.Parameters.AddWithValue("$hp", hero.Hp);
-        command.Parameters.AddWithValue("$mhp", hero.MaxHp);
-        command.Parameters.AddWithValue("$dmg", hero.HandDmg);
-        command.Parameters.AddWithValue("$def", hero.PhisDefense);
-        command.Parameters.AddWithValue("$bdef", hero.BasePhisDefense);
-        command.Parameters.AddWithValue("$mp", hero.MagicPower);
         command.Parameters.AddWithValue("$id", hero.Id);
-    
-        command.ExecuteNonQuery();        
+
+        command.ExecuteNonQuery();
     }
 
     public void UpdateCharacterState(int charId, int state)
@@ -123,7 +130,7 @@ public class CharacterRepository : BaseRepository
         command.CommandText = "UPDATE Characters SET State = $state WHERE Id = $id";
         command.Parameters.AddWithValue("$state", state);
         command.Parameters.AddWithValue("$id", charId);
-        command.ExecuteNonQuery();        
+        command.ExecuteNonQuery();
     }
 
     public void UpdateCharacterRoom(long tgId, int roomId)
@@ -134,9 +141,9 @@ public class CharacterRepository : BaseRepository
         command.CommandText = "UPDATE Characters SET CurrentRoomId = $rid WHERE TelegramId = $tgId AND IsAlive = 1";
         command.Parameters.AddWithValue("$rid", roomId);
         command.Parameters.AddWithValue("$tgId", tgId);
-        command.ExecuteNonQuery(); 
+        command.ExecuteNonQuery();
     }
-    
+
     public void UpdateTurnsLeft(int charId, int turnsLeft)
     {
         using var connection = new SqliteConnection(_connectionString);
@@ -153,13 +160,24 @@ public class CharacterRepository : BaseRepository
         int turns = TurnsHelper.GetTurnsForFloor(location, floor);
         UpdateTurnsLeft(charId, turns);
     }
-    
+
     public void KillCharacter(int charId)
     {
         using var connection = new SqliteConnection(_connectionString);
         connection.Open();
         var command = connection.CreateCommand();
         command.CommandText = "UPDATE Characters SET IsAlive = 0 WHERE Id = $id";
+        command.Parameters.AddWithValue("$id", charId);
+        command.ExecuteNonQuery();
+    }
+    
+    public void UpdatePreviousRoom(int charId, int previousRoomId)
+    {
+        using var connection = new SqliteConnection(_connectionString);
+        connection.Open();
+        var command = connection.CreateCommand();
+        command.CommandText = "UPDATE Characters SET PreviousRoomId = $prev WHERE Id = $id";
+        command.Parameters.AddWithValue("$prev", previousRoomId);
         command.Parameters.AddWithValue("$id", charId);
         command.ExecuteNonQuery();
     }

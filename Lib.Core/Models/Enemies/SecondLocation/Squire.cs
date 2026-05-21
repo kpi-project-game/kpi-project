@@ -14,8 +14,8 @@ public class Squire : EnemyBase, IBattleUnit
         HandDmg = 8;
         Name = "Squire";
         PhisDefense = 4;
-        CurrentSkills.Add(new Stechen(17));
-        CurrentSkills.Add(new Abschneiden(9, 2));
+        Skills.Add(new Stechen(17));
+        Skills.Add(new Abschneiden(9, 2));
     }
 
     public override void CastSkill(ISkill chosenSkill, IBattleUnit target)
