@@ -7,7 +7,7 @@ public class Doom : ISkill
 {
     public string Name => "Doom";
     
-    public void Execute(IBattleUnit casteer, IBattleUnit target)
+    public void Execute(IBattleUnit caster, IBattleUnit target)
     {
         var doomed = target.CurrentEffects.Find(e => e.BattleStateEnum == BattleStateEnum.Doomed);
         

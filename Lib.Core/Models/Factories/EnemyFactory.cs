@@ -12,7 +12,14 @@ public static class EnemyFactory
 
     public static List<EnemyBase> GenerateEnemiesForLocation(int locationId)
     {
-        int count = _rand.Next(1, 4);
+        int count = locationId switch
+        {
+            1 => 1,
+            2 => _rand.Next(1, 3),
+            3 => _rand.Next(1, 4),
+            _ => 1
+        };
+
         var enemies = new List<EnemyBase>();
 
         for (int i = 0; i < count; i++)
@@ -28,23 +35,6 @@ public static class EnemyFactory
 
         Log.Debug("Generated {EnemyCount} enemies for location {LocationId}", count, locationId);
         return enemies;
-    }
-
-    public static EnemyBase CreateByClassName(string className)
-    {
-        return className switch
-        {
-            "StarterMagician"  => new StarterMagician(),
-            "WiseMagician"     => new WiseMagician(),
-            "MagicianShishian" => new MagicianShishian(),
-            "Squire"           => new Squire(),
-            "RoyalKnight"      => new RoyalKnight(),
-            "Warlord"          => new Warlord(),
-            "Skeleton"         => new Skeleton(),
-            "Zombie"           => new Zombie(),
-            "HeadlessWarden"   => new HeadlessWarden(),
-            _                  => new StarterMagician()
-        };
     }
 
     private static EnemyBase GetFirstLocationEnemy()
@@ -64,6 +54,23 @@ public static class EnemyFactory
             1 => new Squire(),
             2 => new RoyalKnight(),
             _ => new Warlord()
+        };
+    }
+
+    public static EnemyBase CreateByClassName(string className)
+    {
+        return className switch
+        {
+            "StarterMagician"  => new StarterMagician(),
+            "WiseMagician"     => new WiseMagician(),
+            "MagicianShishian" => new MagicianShishian(),
+            "Squire"           => new Squire(),
+            "RoyalKnight"      => new RoyalKnight(),
+            "Warlord"          => new Warlord(),
+            "Skeleton"         => new Skeleton(),
+            "Zombie"           => new Zombie(),
+            "HeadlessWarden"   => new HeadlessWarden(),
+            _                  => new StarterMagician()
         };
     }
 

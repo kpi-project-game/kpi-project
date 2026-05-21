@@ -14,7 +14,7 @@ public class Zwerchhau : ISkill
         AmountOfStrikes = amountOfStrikes;
     }
     
-    public void Execute(IBattleUnit casteer, IBattleUnit target)
+    public void Execute(IBattleUnit caster, IBattleUnit target)
     {
         for (int i = 0; i < AmountOfStrikes; i++)
         {

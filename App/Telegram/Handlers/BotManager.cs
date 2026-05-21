@@ -76,7 +76,7 @@ public class BotManager
 
                 hero = CharacterFactory.CreateFromClass(id, data);
                 hero.Id = _charRepo.SaveCharacter(hero);
-                _mapRuler.GenerateLocationOne(hero.Id, id, floor: 1);
+                _mapRuler.GenerateMap(hero.Id, id, hero.Location, floor: 1);
                 hero = _charRepo.GetActiveCharacter(id);
                 if (hero != null)
                 {
