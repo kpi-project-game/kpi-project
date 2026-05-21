@@ -11,7 +11,7 @@ public class Stechen : ISkill
     {
         BaseDmg = baseDmg;
     }
-    public void Execute(IBattleUnit casteer, IBattleUnit target)
+    public void Execute(IBattleUnit caster, IBattleUnit target)
     {
         target.Hp = Math.Max(0, target.Hp - BaseDmg);
     }

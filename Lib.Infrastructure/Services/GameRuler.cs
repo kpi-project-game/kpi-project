@@ -31,8 +31,10 @@ public class GameRuler
     {
         Log.Debug("Hero {HeroId} is looting room {RoomId}", hero.Id, roomId);
 
+        hero.Hp = Math.Min(hero.MaxHp, hero.Hp + 15);
+
         var foundItems = RollLoot();
-        string lootMsg = "🎉 You found items:\n\n";
+        string lootMsg = "🎉 You found items and recovered 15 HP!\n\n";
 
         foreach (var item in foundItems)
         {
@@ -47,13 +49,13 @@ public class GameRuler
                 _ => ""
             };
             lootMsg += $"{rarityIcon} **{item.Name}** ({item.Rarity})\n_{item.Description}_\n\n";
-            
+        
             Log.Information("Hero {HeroId} found item {ItemName} ({Rarity}) in room {RoomId}", hero.Id, item.Name, item.Rarity, roomId);
         }
 
         _charRepo.UpdateCharacterStats(hero);
         _roomRepo.ChangeRoomType(roomId, RoomType.Empty);
-        
+    
         Log.Debug("Room {RoomId} marked as Empty after looting by hero {HeroId}", roomId, hero.Id);
 
         return lootMsg;
@@ -61,7 +63,7 @@ public class GameRuler
 
     private List<BaseItem> RollLoot()
     {
-        int count = _rand.Next(1, 3); 
+        int count = 1; 
         var result = new List<BaseItem>();
 
         var common = new List<BaseItem>

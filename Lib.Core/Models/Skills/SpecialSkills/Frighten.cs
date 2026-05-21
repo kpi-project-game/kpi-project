@@ -6,7 +6,7 @@ namespace Lib.Core.Models.Skills.SpecialSkills;
 public class Frighten : ISkill
 {
     public string Name => "Frighten";
-    public void Execute(IBattleUnit casteer, IBattleUnit target)
+    public void Execute(IBattleUnit caster, IBattleUnit target)
     {
         var frightened = target.CurrentEffects.Find(e => e.BattleStateEnum == BattleStateEnum.Frightened);
         

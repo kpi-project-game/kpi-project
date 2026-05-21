@@ -12,8 +12,8 @@ public class Einhorn : ISkill
         BonusDefence = bonusDefence;
     }
     
-    public void Execute(IBattleUnit casteer, IBattleUnit target)
+    public void Execute(IBattleUnit caster, IBattleUnit target)
     {
-        casteer.PhisDefense += BonusDefence;
+        caster.PhisDefense += BonusDefence;
     }
 }

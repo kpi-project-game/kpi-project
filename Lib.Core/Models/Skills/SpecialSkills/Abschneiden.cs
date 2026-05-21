@@ -15,7 +15,7 @@ public class Abschneiden : ISkill
         BleedingDuration = bleedingDuration;
     }
 
-    public void Execute(IBattleUnit casteer, IBattleUnit target)
+    public void Execute(IBattleUnit caster, IBattleUnit target)
     {
         var bleeding = target.CurrentEffects.Find(e => e.BattleStateEnum == BattleStateEnum.Bleeding);
 

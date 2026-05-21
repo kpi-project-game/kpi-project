@@ -13,8 +13,8 @@ public class Frenzy : ISkill
         FrenzyDuration = frenzyDuration;
     }
     
-    public void Execute(IBattleUnit casteer, IBattleUnit target)
+    public void Execute(IBattleUnit caster, IBattleUnit target)
     {
-        casteer.CurrentEffects.Add(new ActiveEffect(BattleStateEnum.Frenzy, FrenzyDuration));
+        caster.CurrentEffects.Add(new ActiveEffect(BattleStateEnum.Frenzy, FrenzyDuration));
     }
 }

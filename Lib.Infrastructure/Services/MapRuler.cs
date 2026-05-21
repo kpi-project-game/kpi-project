@@ -1,3 +1,4 @@
+
 using Lib.Core.BaseClasses;
 using Lib.Core.Enums;
 using Lib.Infrastructure.Database;
@@ -21,28 +22,23 @@ public class MapRuler
         _battleRepo = battleRepo;
     }
 
-    public void GenerateLocationOne(int charId, long telegramId, int floor)
+    public void GenerateMap(int charId, long telegramId, int location, int floor)
     {
-        Log.Information("Beginning generation of {Floor} floor for hero {CharId}", floor, charId);
-        _roomRepo.ClearMapForCharacter(charId);
-        int width;
-        int height;
+        Log.Information("Beginning generation of Location {Location}, Floor {Floor} for hero {CharId}", location, floor, charId);
 
-        switch (floor)
-        {
-            case 1: width = 4; height = 3; break;
-            case 2: width = 5; height = 4; break;
-            case 3: width = 6; height = 5; break;
-            default: width = 4; height = 3; break;
-        }
+        _roomRepo.ClearMapForCharacter(charId);
+
+
+        int width = 3 + location + floor;  
+        int height = 2 + location + floor; 
 
         GenerateGridLevel(charId, telegramId, width, height);
 
         var hero = _charRepo.GetActiveCharacter(telegramId);
         if (hero != null)
         {
-            _charRepo.ResetTurnsForFloor(charId, hero.Location, floor);
-            Log.Debug("Turns of hero {CharId} are reset", charId);
+            _charRepo.ResetTurnsForFloor(charId, location, floor);
+            Log.Debug("Turns of hero {CharId} are reset for Location {Location}, Floor {Floor}", charId, location, floor);
         }
     }
 
@@ -123,6 +119,7 @@ public class MapRuler
         var room = _roomRepo.GetRoom(targetRoomId);
         if (room == null) return "ok";
 
+
         if (room.Type == RoomType.Exit)
             return AdvanceFloor(hero, telegramId);
 
@@ -147,9 +144,8 @@ public class MapRuler
         }
 
         Log.Information("Hero {HeroId} going to the next level: Location {Location}, Floor {Floor}", hero.Id, nextLocation, nextFloor);
-
         _charRepo.UpdateLocationAndFloor(hero.Id, nextLocation, nextFloor);
-        GenerateLocationOne(hero.Id, telegramId, nextFloor);
+        GenerateMap(hero.Id, telegramId, nextLocation, nextFloor);
 
         return $"next_floor:{nextLocation}:{nextFloor}";
     }
