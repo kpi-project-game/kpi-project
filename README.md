@@ -95,7 +95,6 @@ graph TD
     S -->|Manipulates| M
     F -->|Creates| M
     M -->|Implements| I
-:shipit:
 ```
 
 # Діаграмма класів
@@ -175,3 +174,4 @@ sequenceDiagram
     
     Bot-->>Player: Update Telegram UI
 ```
+:shipit:
