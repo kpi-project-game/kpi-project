@@ -1,4 +1,3 @@
-
 using Lib.Core.BaseClasses;
 using Lib.Core.Enums;
 using Lib.Infrastructure.Database;
@@ -11,23 +10,18 @@ public class MapRuler
 {
     private readonly RoomRepository _roomRepo;
     private readonly CharacterRepository _charRepo;
-    private readonly ActiveBattleRepository _battleRepo;
-
     private readonly Random _rand = new Random();
 
-    public MapRuler(RoomRepository roomRepo, CharacterRepository charRepo, ActiveBattleRepository battleRepo)
+    public MapRuler(RoomRepository roomRepo, CharacterRepository charRepo)
     {
         _roomRepo = roomRepo;
         _charRepo = charRepo;
-        _battleRepo = battleRepo;
     }
 
     public void GenerateMap(int charId, long telegramId, int location, int floor)
     {
         Log.Information("Beginning generation of Location {Location}, Floor {Floor} for hero {CharId}", location, floor, charId);
-
         _roomRepo.ClearMapForCharacter(charId);
-
 
         int width = 3 + location + floor;  
         int height = 2 + location + floor; 
@@ -51,7 +45,6 @@ public class MapRuler
             for (int y = 0; y < height; y++)
             {
                 RoomType type;
-
                 if (x == 0 && y == 0)
                     type = RoomType.Empty;
                 else if (x == width - 1 && y == height - 1)
@@ -72,7 +65,6 @@ public class MapRuler
                     _roomRepo.CreateConnection(grid[x, y], grid[x + 1, y], "East");
                     _roomRepo.CreateConnection(grid[x + 1, y], grid[x, y], "West");
                 }
-
                 if (y < height - 1)
                 {
                     _roomRepo.CreateConnection(grid[x, y], grid[x, y + 1], "North");
@@ -119,7 +111,6 @@ public class MapRuler
         var room = _roomRepo.GetRoom(targetRoomId);
         if (room == null) return "ok";
 
-
         if (room.Type == RoomType.Exit)
             return AdvanceFloor(hero, telegramId);
 
@@ -149,4 +140,4 @@ public class MapRuler
 
         return $"next_floor:{nextLocation}:{nextFloor}";
     }
-}
+}   

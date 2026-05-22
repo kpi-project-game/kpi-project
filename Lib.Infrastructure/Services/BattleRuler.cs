@@ -94,7 +94,6 @@ public class BattleRuler
 
         var target = enemies[enemyIndex];
         string result;
-
         bool isFrightened = hero.CurrentEffects.Any(e => e.BattleStateEnum == BattleStateEnum.Frightened);
 
         if (isFrightened)
@@ -125,6 +124,71 @@ public class BattleRuler
             }
         }
 
+        return FinalizeTurn(hero, enemies, result, effectiveMaxHp);
+    }
+
+    public (string Message, BattleResult Result) ProcessSkill(long telegramId, int skillIndex, int enemyIndex)
+    {
+        var hero = _charRepo.GetActiveCharacter(telegramId);
+        if (hero == null) return ("Character not found.", BattleResult.Defeat);
+        if (hero.State != 1) return ("You are not in battle.", BattleResult.Ongoing);
+
+        var battleData = _battleRepo.GetBattle(hero.Id);
+        if (battleData == null)
+        {
+            _charRepo.UpdateCharacterState(hero.Id, 0);
+            return ("Error: battle not found.", BattleResult.Ongoing);
+        }
+
+        var enemies = JsonSerializer.Deserialize<List<EnemyBattleData>>(battleData.Value.EnemiesJson) ?? new();
+        hero.CurrentEffects = JsonSerializer.Deserialize<List<ActiveEffect>>(battleData.Value.HeroEffectsJson) ?? new();
+
+        int effectiveMaxHp = GetEffectiveMaxHp(hero);
+        if (hero.Hp > effectiveMaxHp)
+        {
+            hero.Hp = effectiveMaxHp;
+            _charRepo.UpdateCharacterStats(hero);
+        }
+
+        if (skillIndex < 0 || skillIndex >= hero.Skills.Count)
+            return ("Invalid skill.", BattleResult.Ongoing);
+        if (enemyIndex < 0 || enemyIndex >= enemies.Count)
+            return ("Invalid target.", BattleResult.Ongoing);
+
+        var skill = hero.Skills[skillIndex];
+        var targetEnemy = enemies[enemyIndex];
+        string result;
+        bool isFrightened = hero.CurrentEffects.Any(e => e.BattleStateEnum == BattleStateEnum.Frightened);
+
+        if (isFrightened)
+        {
+            result = $"😨 You are frightened and cannot cast skills!";
+        }
+        else
+        {
+            var enemyObj = EnemyFactory.CreateByClassName(targetEnemy.ClassType);
+            enemyObj.Hp = targetEnemy.Hp;
+            enemyObj.CurrentEffects = targetEnemy.Effects;
+
+            skill.Execute(hero, enemyObj);
+
+            targetEnemy.Hp = enemyObj.Hp;
+            targetEnemy.Effects = enemyObj.CurrentEffects;
+
+            result = $"✨ You used {skill.Name} on {targetEnemy.Name}!";
+
+            if (targetEnemy.Hp <= 0)
+            {
+                enemies.RemoveAt(enemyIndex);
+                result += $"\n💀 {targetEnemy.Name} has been defeated!";
+            }
+        }
+
+        return FinalizeTurn(hero, enemies, result, effectiveMaxHp);
+    }
+
+    private (string Message, BattleResult Result) FinalizeTurn(Character hero, List<EnemyBattleData> enemies, string initialResult, int effectiveMaxHp)
+    {
         if (enemies.Count == 0)
         {
             hero.Hp = Math.Min(hero.MaxHp, hero.Hp + 23);
@@ -133,9 +197,10 @@ public class BattleRuler
             _charRepo.UpdateTurnsLeft(hero.Id, hero.TurnsLeft - 1);
             _charRepo.UpdateCharacterStats(hero);
             _roomRepo.ChangeRoomType(hero.CurrentRoomId, RoomType.Empty); 
-            return (result + "\n\n✅ All enemies defeated! You recovered 23 HP and may move on.", BattleResult.Victory);
+            return (initialResult + "\n\n✅ All enemies defeated! You recovered 23 HP and may move on.", BattleResult.Victory);
         }
 
+        string result = initialResult;
         foreach (var enemy in enemies)
         {
             var enemyObj = EnemyFactory.CreateByClassName(enemy.ClassType);
@@ -185,129 +250,7 @@ public class BattleRuler
             JsonSerializer.Serialize(hero.CurrentEffects)
         );
 
-        result += $"\n\n❤️ Your HP: {hero.Hp}/{GetEffectiveMaxHp(hero)}";
-        return (result, BattleResult.Ongoing);
-    }
-
-    public (string Message, BattleResult Result) ProcessSkill(long telegramId, int skillIndex, int enemyIndex)
-    {
-        var hero = _charRepo.GetActiveCharacter(telegramId);
-        if (hero == null) return ("Character not found.", BattleResult.Defeat);
-        if (hero.State != 1) return ("You are not in battle.", BattleResult.Ongoing);
-
-        var battleData = _battleRepo.GetBattle(hero.Id);
-        if (battleData == null)
-        {
-            _charRepo.UpdateCharacterState(hero.Id, 0);
-            return ("Error: battle not found.", BattleResult.Ongoing);
-        }
-
-        var enemies = JsonSerializer.Deserialize<List<EnemyBattleData>>(battleData.Value.EnemiesJson) ?? new();
-        hero.CurrentEffects = JsonSerializer.Deserialize<List<ActiveEffect>>(battleData.Value.HeroEffectsJson) ?? new();
-
-        int effectiveMaxHp = GetEffectiveMaxHp(hero);
-        if (hero.Hp > effectiveMaxHp)
-        {
-            hero.Hp = effectiveMaxHp;
-            _charRepo.UpdateCharacterStats(hero);
-        }
-
-        if (skillIndex < 0 || skillIndex >= hero.Skills.Count)
-            return ("Invalid skill.", BattleResult.Ongoing);
-        if (enemyIndex < 0 || enemyIndex >= enemies.Count)
-            return ("Invalid target.", BattleResult.Ongoing);
-
-        var skill = hero.Skills[skillIndex];
-        var targetEnemy = enemies[enemyIndex];
-        string result;
-
-        bool isFrightened = hero.CurrentEffects.Any(e => e.BattleStateEnum == BattleStateEnum.Frightened);
-
-        if (isFrightened)
-        {
-            result = $"😨 You are frightened and cannot cast skills!";
-        }
-        else
-        {
-            var enemyObj = EnemyFactory.CreateByClassName(targetEnemy.ClassType);
-            enemyObj.Hp = targetEnemy.Hp;
-            enemyObj.CurrentEffects = targetEnemy.Effects;
-
-            skill.Execute(hero, enemyObj);
-
-            targetEnemy.Hp = enemyObj.Hp;
-            targetEnemy.Effects = enemyObj.CurrentEffects;
-
-            result = $"✨ You used {skill.Name} on {targetEnemy.Name}!";
-
-            if (targetEnemy.Hp <= 0)
-            {
-                enemies.RemoveAt(enemyIndex);
-                result += $"\n💀 {targetEnemy.Name} has been defeated!";
-            }
-        }
-
-        if (enemies.Count == 0)
-        {
-            hero.Hp = Math.Min(hero.MaxHp, hero.Hp + 23);
-            _battleRepo.EndBattle(hero.Id);
-            _charRepo.UpdateCharacterState(hero.Id, 0);
-            _charRepo.UpdateTurnsLeft(hero.Id, hero.TurnsLeft - 1);
-            _charRepo.UpdateCharacterStats(hero);
-            _roomRepo.ChangeRoomType(hero.CurrentRoomId, RoomType.Empty);
-            return (result + "\n\n✅ All enemies defeated! You recovered 23 HP and may move on.", BattleResult.Victory);
-        }
-
-        foreach (var enemy in enemies)
-        {
-            var enemyAttacker = EnemyFactory.CreateByClassName(enemy.ClassType);
-            enemyAttacker.CurrentEffects = enemy.Effects;
-            if (enemyAttacker.CurrentEffects.Any(e => e.BattleStateEnum == BattleStateEnum.Poisoned))
-            {
-                enemyAttacker.HandDmg = Math.Max(0, enemyAttacker.HandDmg - 1);
-            }
-
-            var enemySkill = enemyAttacker.Skills[_rand.Next(enemyAttacker.Skills.Count)];
-            enemySkill.Execute(enemyAttacker, hero);
-            result += $"\n🗡 {enemy.Name} used {enemySkill.Name}";
-        }
-
-        TickEffects(hero);
-        foreach (var enemy in enemies)
-        {
-            enemy.Effects = TickEffectsList(enemy.Effects, enemy);
-        }
-
-        enemies.RemoveAll(e => e.Hp <= 0);
-
-        _charRepo.UpdateTurnsLeft(hero.Id, hero.TurnsLeft - 1);
-        _charRepo.UpdateCharacterStats(hero);
-
-        if (hero.Hp <= 0)
-        {
-            _battleRepo.EndBattle(hero.Id);
-            _charRepo.UpdateCharacterState(hero.Id, 0);
-            _charRepo.KillCharacter(hero.Id);
-            return (result + "\n\n💀 You died. DARKNESS TOOK YOU.", BattleResult.Defeat);
-        }
-        
-        if (enemies.Count == 0)
-        {
-            hero.Hp = Math.Min(hero.MaxHp, hero.Hp + 23);
-            _battleRepo.EndBattle(hero.Id);
-            _charRepo.UpdateCharacterState(hero.Id, 0);
-            _charRepo.UpdateCharacterStats(hero);
-            _roomRepo.ChangeRoomType(hero.CurrentRoomId, RoomType.Empty);
-            return (result + "\n\n✅ DoT effects killed the remaining enemies! You recovered 23 HP and may move on.", BattleResult.Victory);
-        }
-
-        _battleRepo.SaveBattleState(
-            hero.Id,
-            JsonSerializer.Serialize(enemies),
-            JsonSerializer.Serialize(hero.CurrentEffects)
-        );
-
-        result += $"\n\n❤️ Your HP: {hero.Hp}/{GetEffectiveMaxHp(hero)}";
+        result += $"\n\n❤️ Your HP: {hero.Hp}/{effectiveMaxHp}";
         return (result, BattleResult.Ongoing);
     }
 
@@ -362,30 +305,17 @@ public class BattleRuler
             var effect = hero.CurrentEffects[i];
 
             if (effect.BattleStateEnum == BattleStateEnum.Burning)
-            {
                 hero.Hp = Math.Max(0, hero.Hp - 2);
-            }
             else if (effect.BattleStateEnum == BattleStateEnum.Bleeding)
-            {
                 hero.Hp = Math.Max(0, hero.Hp - 3);
-            }
             else if (effect.BattleStateEnum == BattleStateEnum.Poisoned)
-            {
                 hero.Hp = Math.Max(0, hero.Hp - 1);
-            }
-            else if (effect.BattleStateEnum == BattleStateEnum.Doomed)
-            {
-                if (effect.TurnsLeft <= 1)
-                {
-                    hero.Hp = 0;
-                }
-            }
+            else if (effect.BattleStateEnum == BattleStateEnum.Doomed && effect.TurnsLeft <= 1)
+                hero.Hp = 0;
 
             effect.TurnsLeft--;
             if (effect.TurnsLeft <= 0)
-            {
                 hero.CurrentEffects.RemoveAt(i);
-            }
         }
     }
 
@@ -396,30 +326,17 @@ public class BattleRuler
             var effect = effects[i];
 
             if (effect.BattleStateEnum == BattleStateEnum.Burning)
-            {
                 enemy.Hp = Math.Max(0, enemy.Hp - 2);
-            }
             else if (effect.BattleStateEnum == BattleStateEnum.Bleeding)
-            {
                 enemy.Hp = Math.Max(0, enemy.Hp - 3);
-            }
             else if (effect.BattleStateEnum == BattleStateEnum.Poisoned)
-            {
                 enemy.Hp = Math.Max(0, enemy.Hp - 1);
-            }
-            else if (effect.BattleStateEnum == BattleStateEnum.Doomed)
-            {
-                if (effect.TurnsLeft <= 1)
-                {
-                    enemy.Hp = 0;
-                }
-            }
+            else if (effect.BattleStateEnum == BattleStateEnum.Doomed && effect.TurnsLeft <= 1)
+                enemy.Hp = 0;
 
             effect.TurnsLeft--;
             if (effect.TurnsLeft <= 0)
-            {
                 effects.RemoveAt(i);
-            }
         }
         return effects;
     }

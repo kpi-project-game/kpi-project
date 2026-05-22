@@ -35,7 +35,7 @@ public class BotManager
         _userRepo = new UserRepository();
 
         _battleRepo = new ActiveBattleRepository();
-        _mapRuler = new MapRuler(_roomRepo, _charRepo, _battleRepo);
+        _mapRuler = new MapRuler(_roomRepo, _charRepo);
         _gameRuler = new GameRuler(_invRepo, _charRepo, _roomRepo);
         _battleRuler = new BattleRuler(_charRepo, _battleRepo, _roomRepo);
         _mapRenderer = new MapRenderer(_roomRepo);
@@ -66,13 +66,14 @@ public class BotManager
 
             if (data.StartsWith("class_"))
             {
-                _userRepo.EnsureUserExists(id, update.CallbackQuery.From.Username ?? "Unknown");
-
                 var oldHero = _charRepo.GetActiveCharacter(id);
                 if (oldHero != null)
                 {
-                    _charRepo.KillCharacter(oldHero.Id);
+                    await botClient.AnswerCallbackQuery(update.CallbackQuery.Id, "You already have a living character!", showAlert: true);
+                    return;
                 }
+
+                _userRepo.EnsureUserExists(id, update.CallbackQuery.From.Username ?? "Unknown");
 
                 hero = CharacterFactory.CreateFromClass(id, data);
                 hero.Id = _charRepo.SaveCharacter(hero);
@@ -363,6 +364,15 @@ public class BotManager
             long id = update.Message.From.Id;
             if (update.Message.Text == "/start")
             {
+                Character? existingHero = _charRepo.GetActiveCharacter(id);
+                if (existingHero != null)
+                {
+                    await _botClient.SendMessage(id, "You already have a living hero!");
+                    if (existingHero.State == 1) await ShowBattle(id, existingHero);
+                    else await ShowRoom(id, existingHero);
+                    return;
+                }
+
                 var menu = new InlineKeyboardMarkup(new[]
                 {
                     new[]
